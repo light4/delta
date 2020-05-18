@@ -220,6 +220,7 @@ fn make_styles<'a>(
     true_color: bool,
 ) -> (StyleModifier, StyleModifier, StyleModifier, StyleModifier) {
     let minus_style = make_style(
+        opt.minus_style.as_deref(),
         opt.minus_color.as_deref(),
         Some(style::get_minus_color_default(is_light_mode, true_color)),
         opt.minus_foreground_color.as_deref(),
@@ -227,6 +228,7 @@ fn make_styles<'a>(
     );
 
     let minus_emph_style = make_style(
+        opt.minus_emph_style.as_deref(),
         opt.minus_emph_color.as_deref(),
         Some(style::get_minus_emph_color_default(
             is_light_mode,
@@ -237,6 +239,7 @@ fn make_styles<'a>(
     );
 
     let plus_style = make_style(
+        opt.plus_style.as_deref(),
         opt.plus_color.as_deref(),
         Some(style::get_plus_color_default(is_light_mode, true_color)),
         opt.plus_foreground_color.as_deref(),
@@ -244,6 +247,7 @@ fn make_styles<'a>(
     );
 
     let plus_emph_style = make_style(
+        opt.plus_emph_style.as_deref(),
         opt.plus_emph_color.as_deref(),
         Some(style::get_plus_emph_color_default(
             is_light_mode,
@@ -260,18 +264,24 @@ fn make_styles<'a>(
 /// together with their defaults. The background string is handled specially in
 /// that it may be a single color, or it may be a space-separated "style string".
 fn make_style(
+    style_string: Option<&str>,
     background_string: Option<&str>,
     background_default: Option<Color>,
     foreground_string: Option<&str>,
     foreground_default: Option<Color>,
 ) -> StyleModifier {
-    let mut style = StyleModifier {
-        background: background_default,
-        foreground: foreground_default,
-        font_style: None,
+    let mut style = if let Some(s) = style_string {
+        parse_style_string(s, background_default, foreground_default)
+    } else {
+        StyleModifier {
+            background: background_default,
+            foreground: foreground_default,
+            font_style: None,
+        }
     };
+
     if let Some(s) = background_string {
-        style = parse_style_string(s, background_default, foreground_default);
+        style.background = color_from_rgb_or_ansi_code_with_default(Some(s), style.background);
     }
     if let Some(s) = foreground_string {
         style.foreground = color_from_rgb_or_ansi_code_with_default(Some(s), style.foreground);
@@ -284,11 +294,11 @@ fn parse_style_string(
     background_default: Option<Color>,
     foreground_default: Option<Color>,
 ) -> StyleModifier {
-    let mut background = background_default;
     let mut foreground = foreground_default;
+    let mut background = background_default;
     let mut font_style = FontStyle::empty();
-    let mut seen_background = false;
     let mut seen_foreground = false;
+    let mut seen_background = false;
     for s in style_string.to_lowercase().split_whitespace() {
         if s == "bold" {
             font_style.set(FontStyle::BOLD, true)
@@ -296,18 +306,18 @@ fn parse_style_string(
             font_style.set(FontStyle::ITALIC, true)
         } else if s == "underline" {
             font_style.set(FontStyle::UNDERLINE, true)
-        } else if !seen_background {
-            background = color_from_rgb_or_ansi_code_with_default(Some(s), None);
-            seen_background = true;
         } else if !seen_foreground {
             foreground = color_from_rgb_or_ansi_code_with_default(Some(s), None);
             seen_foreground = true;
+        } else if !seen_background {
+            background = color_from_rgb_or_ansi_code_with_default(Some(s), None);
+            seen_background = true;
         } else {
             eprintln!(
                 "Invalid style string: {}.\n\
-                       A style string may contain a background color string. \
-                       If it contains a background color string it may subsequently \
-                       contain a foreground color string. Font style attributes \
+                       A style string may contain a foreground color string. \
+                       If it contains a foreground color string it may subsequently \
+                       contain a background color string. Font style attributes \
                        'bold', 'italic', and 'underline' may occur in any position. \
                        All strings must be separated by spaces. \
                        See delta --help for how to specify colors.",

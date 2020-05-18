@@ -12,6 +12,10 @@ pub mod integration_test_utils {
         cli::Opt {
             light: false,
             dark: false,
+            minus_style: None,
+            minus_emph_style: None,
+            plus_style: None,
+            plus_emph_style: None,
             minus_color: None,
             minus_emph_color: None,
             minus_foreground_color: None,

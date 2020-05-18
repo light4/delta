@@ -69,6 +69,22 @@ pub struct Opt {
     #[structopt(long = "dark")]
     pub dark: bool,
 
+    #[structopt(long = "minus-style")]
+    /// The style for removed lines.
+    pub minus_style: Option<String>,
+
+    #[structopt(long = "minus-emph-style")]
+    /// The style for emphasized sections of removed lines.
+    pub minus_emph_style: Option<String>,
+
+    #[structopt(long = "plus-style")]
+    /// The style for removed lines.
+    pub plus_style: Option<String>,
+
+    #[structopt(long = "plus-emph-style")]
+    /// The style for emphasized sections of removed lines.
+    pub plus_emph_style: Option<String>,
+
     #[structopt(long = "minus-color")]
     /// The background color for removed lines.
     pub minus_color: Option<String>,
