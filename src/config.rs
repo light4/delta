@@ -353,9 +353,9 @@ fn color_from_rgb_or_ansi_code_with_default(
     arg: Option<&str>,
     default: Option<Color>,
 ) -> Option<Color> {
-    match arg {
-        Some(string) if string.to_lowercase() == "none" => None,
-        Some(string) => Some(color_from_rgb_or_ansi_code(&string)),
+    match arg.map(str::to_lowercase) {
+        Some(s) if s == "none" => None,
+        Some(s) => Some(color_from_rgb_or_ansi_code(&s)),
         None => default,
     }
 }
