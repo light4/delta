@@ -85,35 +85,19 @@ pub struct Opt {
 
     #[structopt(long = "minus-color")]
     /// The background color for removed lines.
-    pub minus_color: Option<String>,
+    pub _deprecated_minus_color: Option<String>,
 
     #[structopt(long = "minus-emph-color")]
     /// The background color for emphasized sections of removed lines.
-    pub minus_emph_color: Option<String>,
-
-    #[structopt(long = "minus-foreground-color")]
-    /// The foreground color for removed lines.
-    pub minus_foreground_color: Option<String>,
-
-    #[structopt(long = "minus-emph-foreground-color")]
-    /// The foreground color for emphasized sections of removed lines.
-    pub minus_emph_foreground_color: Option<String>,
+    pub _deprecated_minus_emph_color: Option<String>,
 
     #[structopt(long = "plus-color")]
     /// The background color for added lines.
-    pub plus_color: Option<String>,
+    pub _deprecated_plus_color: Option<String>,
 
     #[structopt(long = "plus-emph-color")]
     /// The background color for emphasized sections of added lines.
-    pub plus_emph_color: Option<String>,
-
-    #[structopt(long = "plus-foreground-color")]
-    /// Disable syntax highlighting and instead use this foreground color for added lines.
-    pub plus_foreground_color: Option<String>,
-
-    #[structopt(long = "plus-emph-foreground-color")]
-    /// Disable syntax highlighting and instead use this foreground color for emphasized sections of added lines.
-    pub plus_emph_foreground_color: Option<String>,
+    pub _deprecated_plus_emph_color: Option<String>,
 
     #[structopt(long = "theme", env = "BAT_THEME")]
     /// The code syntax highlighting theme to use. Use --theme=none to disable syntax highlighting.
@@ -253,13 +237,14 @@ impl ToString for Error {
     }
 }
 
-pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
+pub fn process_command_line_arguments<'a>(mut opt: Opt) -> config::Config<'a> {
     let assets = HighlightingAssets::new();
 
     _check_validity(&opt, &assets);
 
-    // We do not use the full width, in case `less --status-column` is in effect. See #41 and #10.
+    _apply_rewrite_rules(&mut opt);
 
+    // We do not use the full width, in case `less --status-column` is in effect. See #41 and #10.
     // TODO: There seems to be some confusion in the accounting: we are actually leaving 2
     // characters unused for less at the right edge of the terminal, despite the subtraction of 1
     // here.
@@ -271,7 +256,7 @@ pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
         "auto" => PagingMode::QuitIfOneScreen,
         _ => {
             eprintln!(
-                "Invalid paging value: {} (valid values are \"always\", \"never\", and \"auto\")",
+                "Invalid value for --paging option: {} (valid values are \"always\", \"never\", and \"auto\")",
                 opt.paging_mode
             );
             process::exit(1);
@@ -329,6 +314,53 @@ fn _check_validity(opt: &Opt, assets: &HighlightingAssets) {
                 process::exit(1);
             }
         }
+    }
+}
+
+fn _apply_rewrite_rules(opt: &mut Opt) {
+    opt.minus_style = _make_style_string(
+        opt.minus_style.as_deref(),
+        opt._deprecated_minus_color.as_deref(),
+        "minus",
+    );
+    opt.minus_emph_style = _make_style_string(
+        opt.minus_emph_style.as_deref(),
+        opt._deprecated_minus_emph_color.as_deref(),
+        "minus-emph",
+    );
+    opt.plus_style = _make_style_string(
+        opt.plus_style.as_deref(),
+        opt._deprecated_plus_color.as_deref(),
+        "plus",
+    );
+    opt.plus_emph_style = _make_style_string(
+        opt.plus_emph_style.as_deref(),
+        opt._deprecated_plus_emph_color.as_deref(),
+        "plus-emph",
+    );
+}
+
+pub fn _make_style_string(
+    style: Option<&str>,
+    background_color: Option<&str>,
+    element_name: &str,
+) -> Option<String> {
+    match background_color {
+        Some(background_color) => match style {
+            Some(_) => {
+                eprintln!(
+                    "--{name}-color cannot be used with --{name}-style. \
+                     Use --{name}-style=\"fg bg attr1 attr2 ...\" to set \
+                     foreground color, background color, and style attributes. \
+                     --{name}-color can only be used to set the background color. \
+                     (It is still available for backwards-compatibility.)",
+                    name = element_name,
+                );
+                process::exit(1);
+            }
+            None => Some(format!("syntax {}", background_color)),
+        },
+        None => style.map(str::to_string),
     }
 }
 

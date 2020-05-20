@@ -221,39 +221,31 @@ fn make_styles<'a>(
 ) -> (StyleModifier, StyleModifier, StyleModifier, StyleModifier) {
     let minus_style = make_style(
         opt.minus_style.as_deref(),
-        opt.minus_color.as_deref(),
         Some(style::get_minus_color_default(is_light_mode, true_color)),
-        opt.minus_foreground_color.as_deref(),
         None,
     );
 
     let minus_emph_style = make_style(
         opt.minus_emph_style.as_deref(),
-        opt.minus_emph_color.as_deref(),
         Some(style::get_minus_emph_color_default(
             is_light_mode,
             true_color,
         )),
-        opt.minus_emph_foreground_color.as_deref(),
         minus_style.foreground,
     );
 
     let plus_style = make_style(
         opt.plus_style.as_deref(),
-        opt.plus_color.as_deref(),
         Some(style::get_plus_color_default(is_light_mode, true_color)),
-        opt.plus_foreground_color.as_deref(),
         None,
     );
 
     let plus_emph_style = make_style(
         opt.plus_emph_style.as_deref(),
-        opt.plus_emph_color.as_deref(),
         Some(style::get_plus_emph_color_default(
             is_light_mode,
             true_color,
         )),
-        opt.plus_emph_foreground_color.as_deref(),
         plus_style.foreground,
     );
 
@@ -265,12 +257,10 @@ fn make_styles<'a>(
 /// that it may be a single color, or it may be a space-separated "style string".
 fn make_style(
     style_string: Option<&str>,
-    background_string: Option<&str>,
     background_default: Option<Color>,
-    foreground_string: Option<&str>,
     foreground_default: Option<Color>,
 ) -> StyleModifier {
-    let mut style = if let Some(s) = style_string {
+    if let Some(s) = style_string {
         parse_style_string(s, background_default, foreground_default)
     } else {
         StyleModifier {
@@ -278,15 +268,7 @@ fn make_style(
             foreground: foreground_default,
             font_style: None,
         }
-    };
-
-    if let Some(s) = background_string {
-        style.background = color_from_rgb_or_ansi_code_with_default(Some(s), style.background);
     }
-    if let Some(s) = foreground_string {
-        style.foreground = color_from_rgb_or_ansi_code_with_default(Some(s), style.foreground);
-    }
-    return style;
 }
 
 fn parse_style_string(
