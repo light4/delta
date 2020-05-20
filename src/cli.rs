@@ -256,35 +256,7 @@ impl ToString for Error {
 pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
     let assets = HighlightingAssets::new();
 
-    if opt.light && opt.dark {
-        eprintln!("--light and --dark cannot be used together.");
-        process::exit(1);
-    }
-    match &opt.theme {
-        Some(theme) if !style::is_no_syntax_highlighting_theme_name(&theme) => {
-            if !assets.theme_set.themes.contains_key(theme.as_str()) {
-                eprintln!("Invalid theme: '{}'", theme);
-                process::exit(1);
-            }
-            let is_light_theme = style::is_light_theme(&theme);
-            if is_light_theme && opt.dark {
-                eprintln!(
-                    "{} is a light theme, but you supplied --dark. \
-                     If you use --theme, you do not need to supply --light or --dark.",
-                    theme
-                );
-                process::exit(1);
-            } else if !is_light_theme && opt.light {
-                eprintln!(
-                    "{} is a dark theme, but you supplied --light. \
-                     If you use --theme, you do not need to supply --light or --dark.",
-                    theme
-                );
-                process::exit(1);
-            }
-        }
-        _ => (),
-    };
+    _check_validity(&opt, &assets);
 
     // We do not use the full width, in case `less --status-column` is in effect. See #41 and #10.
 
@@ -327,6 +299,37 @@ pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
         available_terminal_width,
         paging_mode,
     )
+}
+
+fn _check_validity(opt: &Opt, assets: &HighlightingAssets) {
+    if opt.light && opt.dark {
+        eprintln!("--light and --dark cannot be used together.");
+        process::exit(1);
+    }
+    if let Some(ref theme) = opt.theme {
+        if !style::is_no_syntax_highlighting_theme_name(&theme) {
+            if !assets.theme_set.themes.contains_key(theme.as_str()) {
+                eprintln!("Invalid theme: '{}'", theme);
+                process::exit(1);
+            }
+            let is_light_theme = style::is_light_theme(&theme);
+            if is_light_theme && opt.dark {
+                eprintln!(
+                    "{} is a light theme, but you supplied --dark. \
+                     If you use --theme, you do not need to supply --light or --dark.",
+                    theme
+                );
+                process::exit(1);
+            } else if !is_light_theme && opt.light {
+                eprintln!(
+                    "{} is a dark theme, but you supplied --light. \
+                     If you use --theme, you do not need to supply --light or --dark.",
+                    theme
+                );
+                process::exit(1);
+            }
+        }
+    }
 }
 
 fn is_truecolor_terminal() -> bool {
