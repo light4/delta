@@ -1,7 +1,6 @@
 use std::process;
 use std::str::FromStr;
 
-use bit_set::BitSet;
 use syntect::highlighting::{Color, FontStyle, Style, StyleModifier, Theme, ThemeSet};
 use syntect::parsing::SyntaxSet;
 
@@ -24,7 +23,6 @@ pub struct Config<'a> {
     pub plus_emph_style_modifier: StyleModifier,
     pub minus_line_marker: &'a str,
     pub plus_line_marker: &'a str,
-    pub lines_to_be_syntax_highlighted: BitSet,
     pub commit_style: cli::SectionStyle,
     pub commit_color: Color,
     pub file_style: cli::SectionStyle,
@@ -83,7 +81,6 @@ pub fn get_config<'a>(
     true_color: bool,
     terminal_width: usize,
     paging_mode: PagingMode,
-    lines_to_be_syntax_highlighted: BitSet,
 ) -> Config<'a> {
     // Implement --color-only
     let keep_plus_minus_markers = if opt.color_only {
@@ -143,7 +140,6 @@ pub fn get_config<'a>(
         minus_emph_style_modifier,
         plus_style_modifier,
         plus_emph_style_modifier,
-        lines_to_be_syntax_highlighted,
         minus_line_marker,
         plus_line_marker,
         commit_style,

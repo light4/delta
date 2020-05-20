@@ -2,14 +2,12 @@ use std::process;
 use std::str::FromStr;
 use std::string::ToString;
 
-use bit_set::BitSet;
 use console::Term;
 use structopt::StructOpt;
 
 use crate::bat::assets::HighlightingAssets;
 use crate::bat::output::PagingMode;
 use crate::config;
-use crate::delta::State;
 use crate::env;
 use crate::style;
 
@@ -125,14 +123,8 @@ pub struct Opt {
     /// --file-color, --hunk-color to configure the colors of other parts of the diff output.
     pub theme: Option<String>,
 
-    /// A string consisting only of the characters '-', '0', '+', specifying
-    /// which of the 3 diff hunk line-types (removed, unchanged, added) should
-    /// be syntax-highlighted. "all" and "none" are also valid values.
-    #[structopt(long = "syntax-highlight", default_value = "0+")]
-    pub lines_to_be_syntax_highlighted: String,
-
     #[structopt(long = "highlight-removed")]
-    /// DEPRECATED: use --syntax-highlight.
+    /// DEPRECATED: supply 'syntax' as the foreground color in --minus-style.
     pub highlight_minus_lines: bool,
 
     #[structopt(long = "color-only")]
@@ -327,8 +319,6 @@ pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
         }
     };
 
-    let lines_to_be_syntax_highlighted = get_lines_to_be_syntax_highlighted(&opt);
-
     config::get_config(
         opt,
         assets.syntax_set,
@@ -336,7 +326,6 @@ pub fn process_command_line_arguments<'a>(opt: Opt) -> config::Config<'a> {
         true_color,
         available_terminal_width,
         paging_mode,
-        lines_to_be_syntax_highlighted,
     )
 }
 
@@ -344,44 +333,6 @@ fn is_truecolor_terminal() -> bool {
     env::get_env_var("COLORTERM")
         .map(|colorterm| colorterm == "truecolor" || colorterm == "24bit")
         .unwrap_or(false)
-}
-
-fn get_lines_to_be_syntax_highlighted(opt: &Opt) -> BitSet {
-    if opt.highlight_minus_lines {
-        eprintln!("--highlight-removed is deprecated: use --syntax-highlight.");
-    }
-
-    let syntax_highlight_lines = match opt.lines_to_be_syntax_highlighted.to_lowercase().as_ref() {
-        "none" => "",
-        // This is the default value of the new option: honor the deprecated option if it has been used.
-        "0+" => match opt.highlight_minus_lines {
-            true => "-0+",
-            false => "0+",
-        },
-        "all" => "-0+",
-        s => s,
-    }
-    .to_string();
-
-    let mut lines_to_be_syntax_highlighted = BitSet::new();
-    for line_type in syntax_highlight_lines.chars() {
-        lines_to_be_syntax_highlighted.insert(match line_type {
-            '-' => State::HunkMinus as usize,
-            '0' => State::HunkZero as usize,
-            '+' => State::HunkPlus as usize,
-            s => {
-                eprintln!("Invalid --syntax-highlight value: {}. Valid characters are \"-\", \"0\", \"+\".", s);
-                process::exit(1);
-            }
-        });
-    }
-    if opt.minus_foreground_color.is_some() || opt.minus_emph_foreground_color.is_some() {
-        lines_to_be_syntax_highlighted.remove(State::HunkMinus as usize);
-    }
-    if opt.plus_foreground_color.is_some() || opt.plus_emph_foreground_color.is_some() {
-        lines_to_be_syntax_highlighted.remove(State::HunkPlus as usize);
-    }
-    lines_to_be_syntax_highlighted
 }
 
 #[cfg(test)]

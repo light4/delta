@@ -27,7 +27,6 @@ pub mod integration_test_utils {
             color_only: false,
             keep_plus_minus_markers: false,
             theme: None,
-            lines_to_be_syntax_highlighted: "0+".to_string(),
             highlight_minus_lines: false,
             commit_style: cli::SectionStyle::Plain,
             commit_color: "Yellow".to_string(),

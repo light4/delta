@@ -26,35 +26,28 @@ mod tests {
                     options.plus_foreground_color = plus_foreground_color;
                     for plus_emph_foreground_color in vec![None, Some("#ffa0a0".to_string())] {
                         options.plus_emph_foreground_color = plus_emph_foreground_color;
-                        for lines_to_be_syntax_highlighted in vec!["none", "all"] {
-                            options.lines_to_be_syntax_highlighted =
-                                lines_to_be_syntax_highlighted.to_string();
-                            if VERBOSE {
-                                println!();
-                                print!(
-                                    " --syntax-highlight {:?}",
-                                    options.lines_to_be_syntax_highlighted
-                                );
-                                print!(
-                                    " --minus-foreground-color {:?}",
-                                    options.minus_foreground_color
-                                );
-                                print!(
-                                    " --minus-emph-foreground-color {:?}",
-                                    options.minus_emph_foreground_color
-                                );
-                                print!(
-                                    " --plus-foreground-color {:?}",
-                                    options.plus_foreground_color
-                                );
-                                print!(
-                                    " --plus-emph-foreground-color {:?}",
-                                    options.plus_emph_foreground_color
-                                );
-                                println!();
-                            }
-                            _do_hunk_color_test(options.clone());
+                        if VERBOSE {
+                            println!();
+
+                            print!(
+                                " --minus-foreground-color {:?}",
+                                options.minus_foreground_color
+                            );
+                            print!(
+                                " --minus-emph-foreground-color {:?}",
+                                options.minus_emph_foreground_color
+                            );
+                            print!(
+                                " --plus-foreground-color {:?}",
+                                options.plus_foreground_color
+                            );
+                            print!(
+                                " --plus-emph-foreground-color {:?}",
+                                options.plus_emph_foreground_color
+                            );
+                            println!();
                         }
+                        _do_hunk_color_test(options.clone());
                     }
                 }
             }
