@@ -50,25 +50,29 @@ use ColorLayer::*;
 use State::*;
 
 impl<'a> Config<'a> {
-    #[allow(dead_code)]
-    pub fn get_color(&self, state: &State, layer: ColorLayer) -> Option<Color> {
-        let modifier = match state {
+    pub fn get_style(&self, state: &State) -> Option<StyleModifier> {
+        match state {
             HunkMinus => Some(self.minus_style_modifier),
             HunkZero => None,
             HunkPlus => Some(self.plus_style_modifier),
             _ => panic!("Invalid"),
-        };
-        match (modifier, layer) {
-            (Some(modifier), Background) => modifier.background,
-            (Some(modifier), Foreground) => modifier.foreground,
-            (None, _) => None,
         }
     }
 
     #[allow(dead_code)]
+    pub fn get_color(&self, state: &State, layer: ColorLayer) -> Option<Color> {
+        match (self.get_style(state), layer) {
+            (Some(style), Background) => style.background,
+            (Some(style), Foreground) => style.foreground,
+            (None, _) => None,
+        }
+    }
+
     pub fn should_syntax_highlight(&self, state: &State) -> bool {
-        self.lines_to_be_syntax_highlighted
-            .contains((*state).clone() as usize)
+        match self.get_style(state) {
+            Some(style) => style.foreground == Some(style::SYNTAX_HIGHLIGHTING_COLOR),
+            None => false,
+        }
     }
 }
 
@@ -355,6 +359,7 @@ fn color_from_rgb_or_ansi_code_with_default(
 ) -> Option<Color> {
     match arg.map(str::to_lowercase) {
         Some(s) if s == "none" => None,
+        Some(s) if s == "syntax" => Some(style::SYNTAX_HIGHLIGHTING_COLOR),
         Some(s) => Some(color_from_rgb_or_ansi_code(&s)),
         None => default,
     }
