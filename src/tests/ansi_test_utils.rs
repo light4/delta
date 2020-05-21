@@ -71,7 +71,13 @@ pub mod ansi_test_utils {
             Escape(SetGraphicsMode(parameters)) if parameters == &vec![0 as u32] => false,
             _ => true,
         });
-        for ((expected_ansi_sequence, _), ref token) in expected.iter().zip_eq(parsed_line) {
+
+        let parsed_line = parsed_line.collect::<Vec<ansi_parser::Output>>();
+
+        println!("Expected len: {}\n{:?}", expected.len(), expected);
+        println!("Actual   len: {}\n{:?}", parsed_line.len(), parsed_line);
+
+        for ((expected_ansi_sequence, _), ref token) in expected.iter().zip_eq(parsed_line.iter()) {
             match token {
                 TextBlock(s) => {
                     assert!(s.starts_with(*expected_ansi_sequence));
