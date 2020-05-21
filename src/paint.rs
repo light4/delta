@@ -116,9 +116,12 @@ impl<'a> Painter<'a> {
                 ansi_strings.push(background_style.paint(prefix));
             }
             let mut dropped_prefix = prefix == ""; // TODO: Hack
-            for (style, mut text) in
-                superimpose_style_sections(syntax_sections, diff_sections, config.true_color)
-            {
+            for (style, mut text) in superimpose_style_sections(
+                syntax_sections,
+                diff_sections,
+                config.true_color,
+                config.null_syntect_style,
+            ) {
                 if !dropped_prefix {
                     if text.len() > 0 {
                         text.remove(0);
@@ -219,6 +222,7 @@ mod superimpose_style_sections {
         sections_1: &[(SyntectStyle, &str)],
         sections_2: &[(Style, &str)],
         true_color: bool,
+        null_syntect_style: SyntectStyle,
     ) -> Vec<(Style, String)> {
         coalesce(
             superimpose(
@@ -228,6 +232,7 @@ mod superimpose_style_sections {
                     .collect::<Vec<(&(SyntectStyle, char), (Style, char))>>(),
             ),
             true_color,
+            null_syntect_style,
         )
     }
 
@@ -263,6 +268,7 @@ mod superimpose_style_sections {
     fn coalesce(
         style_sections: Vec<((SyntectStyle, Style), char)>,
         true_color: bool,
+        null_syntect_style: SyntectStyle,
     ) -> Vec<(Style, String)> {
         let mut coalesced: Vec<(Style, String)> = Vec::new();
         let mut style_sections = style_sections.iter();
@@ -291,9 +297,14 @@ mod superimpose_style_sections {
             }
 
             let (syntect_style, style) = current_style_pair;
-            let superimposed_style = Style {
-                foreground: Some(to_ansi_color(syntect_style.foreground, true_color)),
-                ..*style
+
+            let superimposed_style = if *syntect_style != null_syntect_style {
+                Style {
+                    foreground: Some(to_ansi_color(syntect_style.foreground, true_color)),
+                    ..*style
+                }
+            } else {
+                *style
             };
             coalesced.push((superimposed_style, current_string));
         }
@@ -340,7 +351,7 @@ mod superimpose_style_sections {
             let sections_2 = vec![(*STYLE, "ab")];
             let superimposed = vec![(*SUPERIMPOSED_STYLE, "ab".to_string())];
             assert_eq!(
-                superimpose_style_sections(&sections_1, &sections_2, true),
+                superimpose_style_sections(&sections_1, &sections_2, true, SyntectStyle::default()),
                 superimposed
             );
         }
@@ -351,7 +362,7 @@ mod superimpose_style_sections {
             let sections_2 = vec![(*STYLE, "a"), (*STYLE, "b")];
             let superimposed = vec![(*SUPERIMPOSED_STYLE, String::from("ab"))];
             assert_eq!(
-                superimpose_style_sections(&sections_1, &sections_2, true),
+                superimpose_style_sections(&sections_1, &sections_2, true, SyntectStyle::default()),
                 superimposed
             );
         }
